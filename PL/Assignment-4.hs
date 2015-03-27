@@ -10,4 +10,5 @@ eval (a :&: b) = (eval a) && (eval b)
 eval (a :|: b) = (eval a) || (eval b)
 
 main = do
-    print $
+    print $ eval (F :|: ((T :&: T) :|: F)) -- True
+    print $ eval (Not (T :&: ((T :&: Not F) :|: F))) -- False
