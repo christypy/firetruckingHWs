@@ -19,12 +19,7 @@ traverse [] = []
 traverse ts = rootlabels ++ traverse children
     where
         rootlabels = [x | Node x _ _ <- ts]
-        children = [x | x <- concat (map fetchChildren ts)]
-            where
-                fetchChildren (Node _ Empty Empty) = []
-                fetchChildren (Node _ l Empty) = [l]
-                fetchChildren (Node _ Empty r) = [r]
-                fetchChildren (Node _ l r) = [l, r]
+        children = [x | Node _ l r <- ts, x <- [l, r]]
 
 data Edit = Change Char | Copy | Delete | Insert Char deriving (Eq, Show)
 
