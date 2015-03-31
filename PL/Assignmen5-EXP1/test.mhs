@@ -1,0 +1,15 @@
+
+if not (not (not True) && (False || True)) then
+   True True True
+else
+  if True then
+   --True:False : True : []
+   False
+  else
+   ()
+
+-- Note that the first branch should *not* be evaluated, as
+-- the condition does not evaluate to "True", so no evaluation
+-- error should occur.
+
+--eof
