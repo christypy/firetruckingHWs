@@ -1,0 +1,36 @@
+Term Frequency (TF) Weighting + Cosine Similarity
+
+DocID   Score
+932     0.449921
+248     0.22188
+38      0.209529
+926     0.173585
+415     0.140546
+
+Term Frequency (TF) Weighting + Jaccard Similarity
+
+DocID   Score
+23      0.015625
+38      0.015625
+248     0.014493
+406     0.013514
+234     0.012658
+
+TF-IDF Weighting + Cosine Similarity
+
+DocID   Score
+932     0.604893
+248     0.294213
+38      0.230013
+926     0.185794
+234     0.173293
+
+TF-IDF Weighting + Jaccard Similarity
+
+DocID   Score
+23      0.015625
+38      0.015625
+248     0.014493
+406     0.013514
+234     0.012658
+
