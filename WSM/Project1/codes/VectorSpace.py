@@ -126,7 +126,7 @@ if __name__ == '__main__':
     docLines = open('wsm_essays_small.txt', 'r').readlines()
     documents = []
     for line in docLines:
-        tmp = line.split(":::")[1].replace("!", "").replace("@", "").replace("#", "").replace("$", "").replace("%", "").replace("^", "").replace("&", "").replace("*", "").replace("(", "").replace(")", "").replace("-", "").replace("_", "").replace("+", "").replace("=", "").replace("<", "").replace(">", "").replace("\\", "").replace("/", "").replace("?", "").replace("\r", "").replace("\\n", "").replace("\"", "").replace("\'", "").replace(",", "").replace("~", "").replace("     ", " ").replace("    ", " ").replace("   ", " ").replace("  ", " ")
+        tmp = line.split(":::")[1].replace("1", "").replace("2", "").replace("3", "").replace("4", "").replace("5", "").replace("6", "").replace("7", "").replace("8", "").replace("9", "").replace("0", "").replace("!", "").replace("@", "").replace("#", "").replace("$", "").replace("%", "").replace("^", "").replace("&", "").replace("*", "").replace("(", "").replace(")", "").replace("-", "").replace("_", "").replace("+", "").replace("=", "").replace("<", "").replace(">", "").replace("\\", "").replace("/", "").replace("?", "").replace("\r", "").replace("\\n", "").replace("\"", "").replace("\'", "").replace(",", "").replace("~", "").replace("     ", " ").replace("    ", " ").replace("   ", " ").replace("  ", " ")
         tmp = tmp[:-3]
         documents.append(tmp)
 
