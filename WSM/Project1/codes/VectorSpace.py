@@ -1,12 +1,13 @@
 from pprint import pprint
 from Parser import Parser
 import util
+import nltkpart
 import operator
 import math
 
 class VectorSpace:
-    """ A algebraic model for representing text documents as vectors of identifiers. 
-    A document is represented as a vector. Each dimension of the vector corresponds to a 
+    """ A algebraic model for representing text documents as vectors of identifiers.
+    A document is represented as a vector. Each dimension of the vector corresponds to a
     separate term. If a term occurs in the document, then the value in the vector is non-zero.
     """
 
@@ -15,6 +16,7 @@ class VectorSpace:
     documentVectorsIDF = []
     documentVectorsTFIDF = []
     globalDocuments = []
+    theFeedbackQIndex = -1
 
     #Mapping of vector index to keyword
     vectorKeywordIndex=[]
@@ -44,7 +46,7 @@ class VectorSpace:
     def getVectorKeywordIndex(self, documentList):
         """ create the keyword associated to the position of the elements within the document vectors """
 
-        #Mapped documents into a single word string	
+        #Mapped documents into a single word string
         vocabularyString = " ".join(documentList)
 
         vocabularyList = self.parser.tokenise(vocabularyString)
@@ -114,8 +116,16 @@ class VectorSpace:
         	queryVector = self.buildQueryVector(searchList)
         	ratings = [util.jaccard(queryVector, documentVector) for documentVector in self.documentVectors]
         elif(mode == "tfidf_jac"):
-        	queryVector = self.buildQueryVector(searchList)
+        	queryVector = self.buildQueryVector(searchList, mode="tf-idf")
         	ratings = [util.jaccard(queryVector, documentVector) for documentVector in self.documentVectorsTFIDF]
+        elif(mode == "fb_tfidf"):
+            queryVector = self.buildQueryVector(searchList, mode="tf-idf")
+            fbQueryVector = self.buildQueryVector(nltkpart.nltkProc(self.globalDocuments[self.theFeedbackQIndex]), mode="tf-idf")
+            newQueryVector = []
+            tmp = zip(queryVector, fbQueryVector)
+            for ttmp in tmp:
+                newQueryVector.append(ttmp[0] + ttmp[1] * 0.5)
+            ratings = [util.cosine(newQueryVector, documentVector) for documentVector in self.documentVectorsTFIDF]
         return ratings
 
 
@@ -132,9 +142,12 @@ if __name__ == '__main__':
 
     vectorSpace= VectorSpace(documents)
 
+    # Define the query here!
+    theQuery = ["sport"]
+
     # Problem 1
 
-    problem_1 = vectorSpace.search(["sport"])
+    problem_1 = vectorSpace.search(theQuery)
     problem_1_match = {}
 
     for i in range(len(problem_1)):
@@ -151,7 +164,7 @@ if __name__ == '__main__':
 
     # Problem 2
 
-    problem_2 = vectorSpace.search(["sport"], mode="tf_jac")
+    problem_2 = vectorSpace.search(theQuery, mode="tf_jac")
     problem_2_match = {}
 
     for i in range(len(problem_2)):
@@ -168,7 +181,7 @@ if __name__ == '__main__':
 
     # Problem 3
 
-    problem_3 = vectorSpace.search(["sport"], mode="tfidf_cos")
+    problem_3 = vectorSpace.search(theQuery, mode="tfidf_cos")
     problem_3_match = {}
 
     for i in range(len(problem_3)):
@@ -185,7 +198,7 @@ if __name__ == '__main__':
 
     # Problem 4
 
-    problem_4 = vectorSpace.search(["sport"], mode="tfidf_jac")
+    problem_4 = vectorSpace.search(theQuery, mode="tfidf_jac")
     problem_4_match = {}
 
     for i in range(len(problem_4)):
@@ -198,6 +211,24 @@ if __name__ == '__main__':
     problem_4_top5 = sorted(problem_4_match.items(), key=operator.itemgetter(1), reverse=True)[:5]
     for rank in problem_4_top5:
         print '{:<7}'.format(rank[0]), round(problem_4_match[rank[0]], 6)
+    print ""
+
+    # Problem 5
+
+    vectorSpace.theFeedbackQIndex = problem_3_top5[0][0]
+    problem_5 = vectorSpace.search(theQuery, mode="fb_tfidf")
+    problem_5_match = {}
+
+    for i in range(len(problem_5)):
+        if(problem_5[i] > 0.0):
+            problem_5_match[i] = problem_5[i]
+
+    print "Feedback Queries + TF-IDF Weighting + Cosine Similarity"
+    print ""
+    print "DocID   Score"
+    problem_5_top5 = sorted(problem_5_match.items(), key=operator.itemgetter(1), reverse=True)[:5]
+    for rank in problem_5_top5:
+        print '{:<7}'.format(rank[0]), round(problem_5_match[rank[0]], 6)
     print ""
 
     ###################################################
