@@ -46,7 +46,7 @@ ev1 env (Op op) = S (VOp op)
 ev1 env (Var x) =
   case (findEnv x env) of
     Just x' -> S x'
-    Nothing -> Error $ "unbound variable: " ++ x
+    Nothing -> Error $ "Unbound variable: " ++ x
 ev1 env (If e1 e2 e3) =
   case (ev1 env e1) of
     S (VB c)  -> if c then ev1 env e2 else ev1 env e3
@@ -62,9 +62,6 @@ ev1 env (Let [x] e be) =
   case (ev1 env e) of
     Error err -> Error err
     S v       -> ev1 (updEnv x v env) be
-	
---ev1 env (Tuple es) = Error "tuples not implemented, your assignment 5"
-                     --Hint: case mapError (ev1 env) es of ...
 
 ev1 env (Tuple es) = 
 	case mapError (ev1 env) es of
@@ -77,17 +74,17 @@ appVals :: Val -> Val -> Error Val
 appVals (VOp op)           v2     = appOp op v2
 appVals (Partial op v1 )   v2     = appBinOp op v1 v2
 appVals v1 v2 = Error $ (show v1)
-                        ++ " cannot be applied to " ++ show v2	
+                        ++ " Can't be applied to " ++ show v2	
 						
 appOp :: Oper -> Val -> Error Val
 appOp Not  (VB b)         = S $ VB $ not b
 appOp op (VTuple vs) = S $ VTuple vs
 appOp Head (VList (v:vs)) = S $ v
 appOp Tail (VList (v:vs)) = S $ VList vs
-appOp Head _              = Error "head applied to empty list"
-appOp Tail _              = Error "tail applied to empty list"
-appOp Not  _              = Error "not applied to non-boolean"
-appOp op v2               = S $ Partial op v2
+appOp Head _ = Error "Head error (applied to empty list)"
+appOp Tail _ = Error "Tail error (applied to empty list)"
+appOp Not  _ = Error "Not error (applied to non-boolean)"
+appOp op v2 = S $ Partial op v2
 
 appBinOp :: Oper -> Val -> Val -> Error Val
 appBinOp Plus  (VN n) (VN n') = S $ VN (n + n')
@@ -95,13 +92,12 @@ appBinOp Times (VN n) (VN n') = S $ VN (n * n')
 appBinOp Equal (VN n) (VN n') = S $ VB (n == n')
 appBinOp And   (VB b) (VB b') = S $ VB (b && b')
 appBinOp Or    (VB b) (VB b') = S $ VB (b || b')
-appBinOp Cons  v      (VTuple vs) = S $ VTuple (v:vs)
-appBinOp Cons  v      (VList vs) = S $ VList (v:vs)
-appBinOp Cons  v      VNil    = S $ VList (v:[])
+appBinOp Cons v (VTuple vs) = S $ VTuple (v:vs)
+appBinOp Cons v (VList vs) = S $ VList (v:vs)
+appBinOp Cons v VNil = S $ VList (v:[])
 appBinOp op v v' =
-  Error $ "binary operator " ++ show op 
-           ++ "not defined on arguments " 
-           ++ (show v) ++ " and " ++ (show v')
+  Error $ "Binary operator " ++ show op 
+           ++ " is not defined"
 						
 -----interpreter and test cases-------------
 evalExp e = ev1 emptyEnv e
