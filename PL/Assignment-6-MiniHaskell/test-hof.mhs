@@ -1,0 +1,4 @@
+a = 100 in
+b = \x->a*x in
+h=\f->\y->f y in
+let g= \x->x*3 in let a = 20 in if not True then a else h g a

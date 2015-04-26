@@ -1,0 +1,3 @@
+twice=\f->\y->f (f y) in
+double = twice (\z->z+z) in
+double 5
