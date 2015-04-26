@@ -1,18 +1,18 @@
---Eval.hs 
+--Eval.hs
 ------------------------------------------
 -- Interpreter for Mini-Haskell
 module Eval (evalExp, evalProg) where
 
 import Exp
 import Err
-			   
+
 ----Val data tyope----------------------
 data Val = VNil
          | VN Int | VB Bool | VOp Oper
-         | Partial Oper Val | VList [Val]  
+         | Partial Oper Val | VList [Val]
 		 | VTuple [Val]
-         | VLam [String] Exp (Env Val)		 
-             
+         | VLam [String] Exp (Env Val)
+
 instance Show Val where
   show VNil = "[]"
   show (VN n) = show n
@@ -22,7 +22,7 @@ instance Show Val where
   show (VTuple vs) = showTuple (map show vs)
   show (VLam xs e env) = "<closure> for " ++ show e
   show (VList bs) = show bs
-  
+
 ----Env data type------------------------
 type Env a = [(String, a)]
 
@@ -55,33 +55,40 @@ ev1 env (If e1 e2 e3) =
     S (VB c)  -> if c then ev1 env e2 else ev1 env e3
     S _       -> Error "'if' condition not a boolean"
     Error err -> Error err
-ev1 env (Lam xs e) = Error "Lambda not implemented, your assignment 6"	
+ev1 env (Lam xs e) = S (VLam xs e env) --Error "Lambda not implemented, your assignment 6"
 ev1 env (App e1 e2) =
   case (ev1 env e1) of
     Error err -> Error err
     S v1 -> case (ev1 env e2) of
         Error err -> Error err
-        S v2 -> appVals v1 v2	
+        S v2 -> appVals v1 v2
 ev1 env (Let [x] e be) =
   case (ev1 env e) of
     Error err -> Error err
-    S v       -> ev1 (updEnv x v env) be	
-ev1 env (Tuple es) = Error "Tuples not implemented, your assignment 5"
-                     --Hint: case mapError (ev1 env) es of ...
-						  
+    S v       -> ev1 (updEnv x v env) be
+ev1 env (Tuple es) =
+  case mapError (ev1 env) es of
+	Error err -> Error "Tuples not implemented, your assignment 5"
+	S v1 -> S $ VTuple v1
+
 -----operator aplications----------------------------------------------
 appVals :: Val -> Val -> Error Val
 appVals (VOp op)           v2     = appOp op v2
 appVals (Partial op v1 )   v2     = appBinOp op v1 v2
 appVals (VLam [x] e env)   v2     = ev1 (updEnv x v2 env) e
 appVals v1 v2 = Error $ (show v1)
-                        ++ " cannot be applied to " ++ show v2	
-						
+                        ++ " cannot be applied to " ++ show v2
+
 appOp :: Oper -> Val -> Error Val
 appOp Not  (VB b)         = S $ VB $ not b
-appOp Not  _              = Error "not applied to non-boolean"
-appOp Head (VList (v:vs)) = Error "Listss not implemented, your assignment 5"
-appOp Tail (VList (v:vs)) = Error "Lists not implemented, your assignment 5"
+appOp op (VTuple ts) = S $ VTuple ts
+appOp Head (VList (t:ts)) = S $ t
+appOp Tail (VList (t:ts)) = S $ VList ts
+appOp Not  _ = Error "not applied to non-boolean"
+appOp Head _ = Error "Head error (applied to empty list)"
+appOp Tail _ = Error "Tail error (applied to empty list)"
+-- appOp Head (VList (v:vs)) = Error "Listss not implemented, your assignment 5"
+-- appOp Tail (VList (v:vs)) = Error "Lists not implemented, your assignment 5"
 appOp op v2               = S $ Partial op v2
 
 appBinOp :: Oper -> Val -> Val -> Error Val
@@ -90,17 +97,27 @@ appBinOp Times (VN n) (VN n') = S $ VN (n * n')
 appBinOp Equal (VN n) (VN n') = S $ VB (n == n')
 appBinOp And   (VB b) (VB b') = S $ VB (b && b')
 appBinOp Or    (VB b) (VB b') = S $ VB (b || b')
-appBinOp Cons  v      (VList vs) = Error " Lists implemented, your assignment 5"
-appBinOp Cons  v      VNil    = Error "Lists not implemented, your assignment 5"
+appBinOp Cons z (VTuple zs) = S $ VTuple (z:zs)
+appBinOp Cons x (VList xs) = S $ VList (x:xs)
+appBinOp Cons c VNil = S $ VList (c:[])
 appBinOp op v v' =
-  Error $ "binary operator " ++ show op 
-           ++ "not defined on arguments " 
+  Error $ "binary operator " ++ show op
+           ++ "not defined on arguments "
            ++ (show v) ++ " and " ++ (show v')
-						
+
 -----interpreter and test cases-------------
 evalExp e = ev1 emptyEnv e
 
-evalProg (Program decls e) = Error "evalProg not implemented, your assignment 6"
+evalProg (Program decls e) = --Error "evalProg not implemented, your assignment 6"
+	case (evalDecls emptyEnv decls) of
+		S env-> ev1 env e
+		Error s -> Error s
+	where
+		evalDecls env [] = S env
+		evalDecls env ((Decl name e) : decls) =
+			case (ev1 env e) of
+				S v -> evalDecls ((name, v) : env) decls
+				Error s -> Error s
 
 ----some test cases------------------------
 test1 = App (App (Op Plus) (N 5)) (N 3)
@@ -117,20 +134,19 @@ test5 = Lam ["x"] (Var "x")
 
 test6 = App (Lam ["x"] (App (App (Op Times) (Var "x")) (Var "x"))) (N 5)
 
-test7 = Let ["f"] (Lam ["x"] (App (App (Op Times) (Var "x")) (Var "x"))) (Var "f") 
+test7 = Let ["f"] (Lam ["x"] (App (App (Op Times) (Var "x")) (Var "x"))) (Var "f")
 
 test8 = Let ["f"] (Lam ["x"] (App (App (Op Times) (N 2)) (Var "x"))) (App (Var "f") (N 8))
 
 test9 = (App (Op Tail) (App (App (Op Cons) (N 1)) Nil))
 
-test10 = Let ["twice"] (Lam ["f"] (Lam ["x"] (App (Var "f") (App (Var "f") (Var "x"))))) 
+test10 = Let ["twice"] (Lam ["f"] (Lam ["x"] (App (Var "f") (App (Var "f") (Var "x")))))
               (App (App (Var "twice") (Lam ["z"] (App (App (Op Plus) (Var "z")) (Var "z")))) (N 5))
 
 testprog1 = Program [ (Decl "x" (N 10)) ] (Var "x")
 
-testprog2 = Program [ (Decl "a" (N 5)), (Decl "b" (N 10))] 
-            (If (App (App (Op Equal) (Var "a")) (Var  "b"))  
+testprog2 = Program [ (Decl "a" (N 5)), (Decl "b" (N 10))]
+            (If (App (App (Op Equal) (Var "a")) (Var  "b"))
 			    (App (App (Op Times) (Var "a")) (Var  "b"))   (App (App (Op Plus) (Var "a")) (Var  "b")))
 
 testprog3 = Program [ (Decl "f" (Lam ["x"] (App (App (Op Times) (N 2)) (Var "x")))) ] (App (Var "f") (N 5))
- 
